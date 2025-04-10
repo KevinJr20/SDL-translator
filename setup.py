@@ -12,7 +12,7 @@ setup(
     description="A cultural nuance translator for Sheng and Dholuo",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/sheng-dholuo-translator",  # Add your GitHub URL later
+    url="https://github.com/KevinJr20/SDL-translator.git",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
