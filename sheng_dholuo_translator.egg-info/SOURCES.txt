@@ -1,0 +1,9 @@
+README.md
+setup.py
+sdk-translator/__init__.py
+sdk-translator/translator.py
+sheng_dholuo_translator.egg-info/PKG-INFO
+sheng_dholuo_translator.egg-info/SOURCES.txt
+sheng_dholuo_translator.egg-info/dependency_links.txt
+sheng_dholuo_translator.egg-info/requires.txt
+sheng_dholuo_translator.egg-info/top_level.txt
