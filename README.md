@@ -17,16 +17,16 @@ Usage
 
 #### Translate a Phrase
 
-from sheng_dholuo_translator import CulturalTranslator
+```from sheng_dholuo_translator import CulturalTranslator```
 
-translator = CulturalTranslator("phrases.csv")
-result = translator.translate("Mambo vipi?", lang_filter="Sheng-English")
-print(result['translation'])  # Output: What’s up?
-print(result['vibe'])  # Output: Casual, greeting
+```translator = CulturalTranslator("phrases.csv")```
+```result = translator.translate("Mambo vipi?", lang_filter="Sheng-English")```
+```print(result['translation'])  # Output: What’s up?```
+```print(result['vibe'])  # Output: Casual, greeting```
 
 ##### Add a New Phrase
 
-translator.add_phrase("Niko freshi", "I’m fresh", "Sheng-English", "Confident, stylish")
+```translator.add_phrase("Niko freshi", "I’m fresh", "Sheng-English", "Confident, stylish")```
 
 ###### More Features
 
