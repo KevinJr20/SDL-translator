@@ -5,7 +5,6 @@ A cultural nuance translator for Sheng (Kenyan urban slang) and Dholuo (Luo lang
 ## Installation
 
 Install via pip:
-```bash```
 ```pip install sheng-dholuo-translator```
 
 ### Requirements
