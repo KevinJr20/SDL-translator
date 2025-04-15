@@ -2,6 +2,17 @@
 
 A cultural nuance translator for Sheng (Kenyan urban slang) and Dholuo (Luo language), built with love and tech swagger. Translate phrases, capture vibes, and even train AI models with your own data.
 
+## Features
+- Translation using CSV lookup, fuzzy matching, and AI (`facebook/m2m100_418M`).
+- Context-aware translations (`casual`, `formal`, `romantic`).
+- Sentiment-based vibe prediction.
+- Interactive CLI with commands like `translate`, `add`, `history`, `clear`, `search-vibe`, `random`, `stats`, `export`, `train`.
+- Fine-tune the AI model with custom data.
+
+## Upcoming Features
+- Integration with advanced AI like Grok for more nuanced translations.
+- Real-time data collection from X posts to expand the phrase database.
+
 ## Installation
 
 Install via pip:
