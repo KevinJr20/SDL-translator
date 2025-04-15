@@ -12,7 +12,7 @@ pip install sheng-dholuo-translator
 
 ### Requirements
 
-`Python 3.8+`
+`Python 3.8+`,
 `pandas`, `colorama`, `fuzzywuzzy` (automatically installed)
 
 Usage
@@ -47,4 +47,4 @@ Add more Sheng and Dholuo phrases by using the `add_phrase` method or submitting
 
 ###### Author
 
-Built by Kevin Omondi Jr. with Kenyan pride and AI dreams.
+Built by `Kevin Omondi Jr.` with Kenyan pride and AI dreams.
