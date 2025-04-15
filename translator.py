@@ -3,22 +3,26 @@ os.environ["WANDB_MODE"] = "disabled"
 os.environ["WANDB_DISABLED"] = "true"
 
 import pandas as pd
-import random
 import argparse
 import json
 from colorama import init, Fore, Style
 from fuzzywuzzy import fuzz
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, Trainer, TrainingArguments
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, Trainer, TrainingArguments, pipeline, M2M100ForConditionalGeneration, M2M100Tokenizer
 from datasets import Dataset
 init()
 
 class CulturalTranslator:
     def __init__(self):
         self.csv_file = os.path.join(os.path.dirname(__file__), "phrases.csv")
-        self.phrases = pd.read_csv(self.csv_file)
+        try:
+            self.phrases = pd.read_csv(self.csv_file)
+        except FileNotFoundError:
+            print(f"{Fore.YELLOW}Phrases CSV not found. Creating a new one.{Style.RESET_ALL}")
+            self.phrases = pd.DataFrame(columns=["Source Phrase", "Target Phrase", "Language Pair", "Vibe Note"])
+            self.phrases.to_csv(self.csv_file, index=False)
         self.model_name = "facebook/m2m100_418M"
         self.fine_tuned_model_path = "./trained_model"
-        self.base_model_cache_path = "./base_model_cache"  # Cache for base model
+        self.base_model_cache_path = "./base_model_cache"
         self.tokenizer = None
         self.model = None
         self.history_file = "translation_history.json"
@@ -29,18 +33,18 @@ class CulturalTranslator:
         try:
             if os.path.exists(self.fine_tuned_model_path):
                 print(f"{Fore.CYAN}Loading fine-tuned model from {self.fine_tuned_model_path}{Style.RESET_ALL}")
-                self.tokenizer = AutoTokenizer.from_pretrained(self.fine_tuned_model_path)
-                self.model = AutoModelForSeq2SeqLM.from_pretrained(self.fine_tuned_model_path)
+                self.tokenizer = M2M100Tokenizer.from_pretrained(self.fine_tuned_model_path)
+                self.model = M2M100ForConditionalGeneration.from_pretrained(self.fine_tuned_model_path)
             else:
                 print(f"{Fore.YELLOW}Fine-tuned model not found.{Style.RESET_ALL}")
                 if os.path.exists(self.base_model_cache_path):
                     print(f"{Fore.CYAN}Loading cached base model from {self.base_model_cache_path}{Style.RESET_ALL}")
-                    self.tokenizer = AutoTokenizer.from_pretrained(self.base_model_cache_path)
-                    self.model = AutoModelForSeq2SeqLM.from_pretrained(self.base_model_cache_path)
+                    self.tokenizer = M2M100Tokenizer.from_pretrained(self.base_model_cache_path)
+                    self.model = M2M100ForConditionalGeneration.from_pretrained(self.base_model_cache_path)
                 else:
                     print(f"{Fore.YELLOW}Downloading base model {self.model_name} (this may take a while)...{Style.RESET_ALL}")
-                    self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-                    self.model = AutoModelForSeq2SeqLM.from_pretrained(self.model_name)
+                    self.tokenizer = M2M100Tokenizer.from_pretrained(self.model_name)
+                    self.model = M2M100ForConditionalGeneration.from_pretrained(self.model_name)
                     print(f"{Fore.CYAN}Caching base model to {self.base_model_cache_path}{Style.RESET_ALL}")
                     self.tokenizer.save_pretrained(self.base_model_cache_path)
                     self.model.save_pretrained(self.base_model_cache_path)
@@ -77,29 +81,29 @@ class CulturalTranslator:
         except Exception as e:
             return {"error": f"Failed to clear history: {e}"}
 
-    def predict_vibe(self, translation):
-        translation = translation.lower()
-        # Expanded vibe detection with Sheng and Dholuo keywords
-        score_calm = sum(1 for word in ["good", "okay", "fine", "peace", "ber", "maber"] if word in translation)
-        score_hype = sum(1 for word in ["cool", "hype", "arrived", "party", "noma", "poa"] if word in translation)
-        score_stressed = sum(1 for word in ["hungry", "trouble", "fool", "kwea"] if word in translation)
-        score_funny = sum(1 for word in ["funny", "joke", "cheka", "kicheko"] if word in translation)
-        score_romantic = sum(1 for word in ["love", "babe", "honey", "papa", "mrembo"] if word in translation)
+    def predict_vibe(self, text):
+        sentiment_pipeline = getattr(self, "sentiment_pipeline", None)
+        if sentiment_pipeline is None:
+            print(f"{Fore.CYAN}Loading sentiment analysis model...{Style.RESET_ALL}")
+            self.sentiment_pipeline = pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
+            sentiment_pipeline = self.sentiment_pipeline
 
-        scores = {
-            "Calm, positive": score_calm,
-            "Hype, energetic": score_hype,
-            "Desperate, stressed": score_stressed,
-            "Funny": score_funny,
-            "Romantic": score_romantic
-        }
-        max_vibe = max(scores, key=scores.get)
-        max_score = scores[max_vibe]
-        return max_vibe if max_score > 0 else "Neutral"
+        result = sentiment_pipeline(text)[0]
+        label = result["label"]
+        score = result["score"]
+
+        if label == "POSITIVE" and score > 0.9:
+            return "Calm, positive"
+        elif label == "POSITIVE":
+            return "Hype, energetic"
+        elif label == "NEGATIVE" and score > 0.9:
+            return "Desperate, stressed"
+        elif label == "NEGATIVE":
+            return "Funny" if "cheka" in text.lower() else "Neutral"
+        return "Neutral"
 
     def detect_language(self, phrase):
         phrase = phrase.lower()
-        # Simple heuristic for language detection
         sheng_keywords = ["mambo", "noma", "poa", "vipi", "fiti", "msee"]
         dholuo_keywords = ["ber", "awinjo", "maber", "ni", "kwe", "chunya"]
 
@@ -111,7 +115,6 @@ class CulturalTranslator:
         elif dholuo_score > sheng_score:
             return "Dholuo"
         else:
-            # If scores are tied or no keywords match, default to Sheng (more common in mixed contexts)
             return "Sheng"
 
     def train_model(self, training_data_file="training_data.json", output_dir="./trained_model"):
@@ -169,7 +172,14 @@ class CulturalTranslator:
 
         return {"success": f"Model trained and saved to {output_dir}"}
 
-    def translate(self, source_phrase, lang_filter=None, reverse=False, use_ai=False):
+    def translate(self, source_phrase, lang_filter=None, reverse=False, use_ai=False, context="casual"):
+        if not source_phrase or not isinstance(source_phrase, str):
+            return {"error": "Source phrase must be a non-empty string"}
+        if lang_filter and lang_filter not in ["Sheng-English", "Dholuo-English"]:
+            return {"error": "Language pair must be 'Sheng-English' or 'Dholuo-English'"}
+        if context not in ["casual", "formal", "romantic"]:
+            return {"error": "Context must be 'casual', 'formal', or 'romantic'"}
+
         if use_ai and self.model and self.tokenizer:
             if reverse:
                 src_lang = "en"
@@ -181,24 +191,30 @@ class CulturalTranslator:
                     tgt_lang = "sw"
             else:
                 tgt_lang = "en"
-                # Detect language to set src_lang more accurately
                 detected_lang = self.detect_language(source_phrase)
                 if detected_lang == "Sheng":
-                    src_lang = "sw"  # Sheng is Swahili-based
+                    src_lang = "sw"
                 elif detected_lang == "Dholuo":
-                    src_lang = "sw"  # Still using Swahili as a proxy, but we can improve this later
+                    src_lang = "sw"
                 else:
-                    src_lang = "sw"  # Default to Swahili
+                    src_lang = "sw"
 
             self.tokenizer.src_lang = src_lang
-            input_ids = self.tokenizer(source_phrase, return_tensors="pt", padding=True, truncation=True).input_ids
-            outputs = self.model.generate(input_ids, forced_bos_token_id=self.tokenizer.get_lang_id(tgt_lang))
-            translation = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+            encoded = self.tokenizer(source_phrase, return_tensors="pt", padding=True, truncation=True)
+            generated_tokens = self.model.generate(**encoded, forced_bos_token_id=self.tokenizer.get_lang_id(tgt_lang))
+            translation = self.tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)[0]
             vibe = self.predict_vibe(translation)
+
+            if context == "formal":
+                translation = translation.replace("hey", "hello").replace("bro", "friend")
+            elif context == "romantic":
+                translation = translation + ", my love" if lang_filter == "Sheng-English" else translation + ", darling"
+
             result = {
                 "translation": translation,
                 "vibe": f"AI-generated ({vibe})",
-                "language_pair": lang_filter or "Unknown"
+                "language_pair": lang_filter or "Unknown",
+                "context": context
             }
             self.save_history({"source": source_phrase, "result": result})
             return result
@@ -213,32 +229,61 @@ class CulturalTranslator:
         result = df[df[source_col].str.lower() == source_phrase.lower()]
         if not result.empty:
             row = result.iloc[0]
+            translation = row[target_col]
+            vibe = row['Vibe Note']
+            if context == "formal" and lang_filter == "Sheng-English":
+                translation = translation.replace("bro", "friend")
+            elif context == "romantic" and lang_filter == "Sheng-English":
+                translation = translation + ", darling"
             result = {
-                "translation": row[target_col],
-                "vibe": row['Vibe Note'],
-                "language_pair": row['Language Pair']
+                "translation": translation,
+                "vibe": vibe,
+                "language_pair": row['Language Pair'],
+                "context": context
             }
             self.save_history({"source": source_phrase, "result": result})
             return result
         
+        best_score = 0
+        best_match = None
         suggestions = []
         for _, row in df.iterrows():
             score = fuzz.partial_ratio(source_phrase.lower(), row[source_col].lower())
+            if score > 80 and score > best_score:
+                best_score = score
+                best_match = row
             if score > 50:
                 suggestions.append((score, row[source_col], row[target_col]))
         suggestions.sort(reverse=True)
-        if suggestions:
-            result = {"suggestions": [{"score": s[0], "source": s[1], "target": s[2]} for s in suggestions[:3]]}
+
+        if best_match is not None:
+            translation = best_match[target_col]
+            vibe = best_match['Vibe Note']
+            if context == "formal" and lang_filter == "Sheng-English":
+                translation = translation.replace("bro", "friend")
+            elif context == "romantic" and lang_filter == "Sheng-English":
+                translation = translation + ", darling"
+            result = {
+                "translation": translation,
+                "vibe": vibe,
+                "language_pair": best_match['Language Pair'],
+                "context": context,
+                "note": f"Fuzzy match (score: {best_score})"
+            }
             self.save_history({"source": source_phrase, "result": result})
             return result
-        result = {"error": "Phrase not found!"}
+
+        result = {
+            "error": "Phrase not found!",
+            "suggestions": [sug[1] for sug in suggestions[:3]] if suggestions else "No similar phrases found."
+        }
         self.save_history({"source": source_phrase, "result": result})
         return result
     
-    def batch_translate(self, phrases, lang_filter=None, reverse=False, use_ai=False, export_file=None):
+    def batch_translate(self, phrases, lang_filter=None, reverse=False, use_ai=False, export_file=None, context="casual"):
         results = []
         for phrase in phrases:
-            result = self.translate(phrase, lang_filter, reverse, use_ai)
+            result = self.translate(phrase, lang_filter, reverse, use_ai, context)
             results.append({"phrase": phrase, "result": result})
         
         if export_file:
@@ -254,7 +299,7 @@ class CulturalTranslator:
     def recommend_similar_vibe(self, vibe):
         matches = self.phrases[self.phrases['Vibe Note'].str.lower().str.contains(vibe.lower(), na=False)]
         if not matches.empty:
-            row = matches.sample(1).iloc[0]  # Fixed the bug
+            row = matches.sample(1).iloc[0]
             return {
                 "source": row['Source Phrase'],
                 "translation": row['Target Phrase'],
@@ -270,6 +315,8 @@ class CulturalTranslator:
         return {"error": "No vibes match that keyword!"}
     
     def add_phrase(self, source_phrase, target_phrase, lang_pair, vibe):
+        if not source_phrase or not target_phrase or not vibe:
+            return {"error": "Source, target, and vibe must be non-empty"}
         if lang_pair not in ["Sheng-English", "Dholuo-English"]:
             return {"error": "Language pair must be 'Sheng-English' or 'Dholuo-English'"}
         new_row = pd.DataFrame({
@@ -326,6 +373,7 @@ def main():
     translate_parser.add_argument("--lang", help="Language pair (Sheng-English, Dholuo-English)")
     translate_parser.add_argument("--reverse", action="store_true", help="Reverse translation (English to Sheng/Dholuo)")
     translate_parser.add_argument("--ai", action="store_true", help="Use AI for translation")
+    translate_parser.add_argument("--context", default="casual", help="Context for translation (casual, formal, romantic)")
 
     batch_parser = subparsers.add_parser("batch", help="Translate multiple phrases from a file")
     batch_parser.add_argument("file", help="File with phrases (one per line)")
@@ -333,6 +381,7 @@ def main():
     batch_parser.add_argument("--reverse", action="store_true", help="Reverse translation (English to Sheng/Dholuo)")
     batch_parser.add_argument("--ai", action="store_true", help="Use AI for translation")
     batch_parser.add_argument("--export", help="Export results to a file")
+    batch_parser.add_argument("--context", default="casual", help="Context for translation (casual, formal, romantic)")
 
     subparsers.add_parser("history", help="View translation history")
 
@@ -343,34 +392,16 @@ def main():
     translator = CulturalTranslator()
 
     if not args.command or args.command == "interactive":
-        print(f"{Fore.CYAN}Welcome to the Sheng-Dholuo Translator, bro!{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}Welcome to the Sheng-Dholuo Translator, innit!{Style.RESET_ALL}")
+        print("Commands: translate, add, history, clear, search-vibe, random, stats, export, train, exit")
         while True:
-            print(f"\n{Fore.YELLOW}Options:{Style.RESET_ALL}")
-            print("1. Translate a phrase")
-            print("2. Search by vibe")
-            print("3. Add a new phrase")
-            print("4. Reverse translate (English to Sheng/Dholuo)")
-            print("5. Get a random phrase")
-            print("6. Show stats")
-            print("7. Export training data")
-            print("8. Train AI model")
-            print("9. View translation history")
-            print("10. Clear translation history")
-            print("11. Quit")
-            choice = input("What’s your move? (1-11): ").strip()
+            choice = input("\nEnter command: ").strip().lower()
             
-            # Validate choice
-            if not choice.isdigit() or int(choice) < 1 or int(choice) > 11:
-                print(f"{Fore.RED}Please enter a number between 1 and 11.{Style.RESET_ALL}")
-                continue
-            
-            choice = int(choice)
-            
-            if choice == 11:
-                print(f"{Fore.GREEN}Catch you later, bro! Stay noma!{Style.RESET_ALL}")
+            if choice == "exit":
+                print(f"{Fore.GREEN}Catch you later, Usitense!{Style.RESET_ALL}")
                 break
             
-            elif choice == 1:
+            elif choice == "translate":
                 phrase = input("Enter a Sheng or Dholuo phrase: ").strip()
                 if not phrase:
                     print(f"{Fore.RED}Phrase cannot be empty.{Style.RESET_ALL}")
@@ -379,43 +410,38 @@ def main():
                 if lang and lang not in ["Sheng-English", "Dholuo-English"]:
                     print(f"{Fore.RED}Language must be 'Sheng-English' or 'Dholuo-English'.{Style.RESET_ALL}")
                     continue
+                context = input("Context (casual/formal/romantic): ").strip().lower() or "casual"
+                if context not in ["casual", "formal", "romantic"]:
+                    print(f"{Fore.RED}Context must be 'casual', 'formal', or 'romantic'.{Style.RESET_ALL}")
+                    continue
                 use_ai = input("Use AI for translation? (y/n): ").strip().lower()
                 if use_ai not in ['y', 'n']:
                     print(f"{Fore.RED}Please enter 'y' or 'n'.{Style.RESET_ALL}")
                     continue
                 use_ai = use_ai == 'y'
-                result = translator.translate(phrase, lang, reverse=False, use_ai=use_ai)
+                reverse = input("Reverse translate (English to Sheng/Dholuo)? (y/n): ").strip().lower() == 'y'
+                result = translator.translate(phrase, lang, reverse=reverse, use_ai=use_ai, context=context)
                 
                 if "translation" in result:
                     print(f"{Fore.GREEN}Translation: {result['translation']}{Style.RESET_ALL}")
                     print(f"{Fore.MAGENTA}Vibe: {result['vibe']}{Style.RESET_ALL}")
                     print(f"Language: {result['language_pair']}")
+                    print(f"Context: {result['context']}")
+                    if "note" in result:
+                        print(f"Note: {result['note']}")
                     vibe = result['vibe'].split(' (')[0]
                     rec = translator.recommend_similar_vibe(vibe)
                     if "source" in rec:
                         print(f"\n{Fore.CYAN}Try this similar vibe:{Style.RESET_ALL}")
                         print(f"- {rec['source']} → {rec['translation']} ({rec['vibe']})")
-                elif "suggestions" in result:
-                    print(f"{Fore.YELLOW}No exact match, but did you mean one of these?{Style.RESET_ALL}")
-                    for sug in result['suggestions']:
-                        print(f"- {sug['source']} → {sug['target']} (Similarity: {sug['score']}%)")
-                else:
+                elif "error" in result:
                     print(f"{Fore.RED}{result['error']}{Style.RESET_ALL}")
+                    if "suggestions" in result and isinstance(result['suggestions'], list):
+                        print(f"{Fore.YELLOW}Did you mean one of these?{Style.RESET_ALL}")
+                        for sug in result['suggestions']:
+                            print(f"- {sug}")
             
-            elif choice == 2:
-                vibe = input("Enter a vibe keyword (e.g., hype, calm): ").strip()
-                if not vibe:
-                    print(f"{Fore.RED}Vibe keyword cannot be empty.{Style.RESET_ALL}")
-                    continue
-                result = translator.search_by_vibe(vibe)
-                if "error" in result:
-                    print(f"{Fore.RED}{result['error']}{Style.RESET_ALL}")
-                else:
-                    print(f"{Fore.YELLOW}Phrases with '{vibe}' vibes:{Style.RESET_ALL}")
-                    for match in result:
-                        print(f"- {match['Source Phrase']} → {match['Target Phrase']} ({match['Vibe Note']})")
-            
-            elif choice == 3:
+            elif choice == "add":
                 source = input("Enter the Sheng/Dholuo phrase: ").strip()
                 if not source:
                     print(f"{Fore.RED}Source phrase cannot be empty.{Style.RESET_ALL}")
@@ -438,70 +464,7 @@ def main():
                 else:
                     print(f"{Fore.RED}{result['error']}{Style.RESET_ALL}")
             
-            elif choice == 4:
-                phrase = input("Enter an English phrase: ").strip()
-                if not phrase:
-                    print(f"{Fore.RED}Phrase cannot be empty.{Style.RESET_ALL}")
-                    continue
-                lang = input("Target language? (Sheng-English, Dholuo-English, or leave blank): ").strip() or None
-                if lang and lang not in ["Sheng-English", "Dholuo-English"]:
-                    print(f"{Fore.RED}Language must be 'Sheng-English' or 'Dholuo-English'.{Style.RESET_ALL}")
-                    continue
-                use_ai = input("Use AI for translation? (y/n): ").strip().lower()
-                if use_ai not in ['y', 'n']:
-                    print(f"{Fore.RED}Please enter 'y' or 'n'.{Style.RESET_ALL}")
-                    continue
-                use_ai = use_ai == 'y'
-                result = translator.translate(phrase, lang, reverse=True, use_ai=use_ai)
-                
-                if "translation" in result:
-                    print(f"{Fore.GREEN}Translation: {result['translation']}{Style.RESET_ALL}")
-                    print(f"{Fore.MAGENTA}Vibe: {result['vibe']}{Style.RESET_ALL}")
-                    print(f"Language: {result['language_pair']}")
-                    vibe = result['vibe'].split(' (')[0]
-                    rec = translator.recommend_similar_vibe(vibe)
-                    if "source" in rec:
-                        print(f"\n{Fore.CYAN}Try this similar vibe:{Style.RESET_ALL}")
-                        print(f"- {rec['source']} → {rec['translation']} ({rec['vibe']})")
-                elif "suggestions" in result:
-                    print(f"{Fore.YELLOW}No exact match, but did you mean one of these?{Style.RESET_ALL}")
-                    for sug in result['suggestions']:
-                        print(f"- {sug['source']} → {sug['target']} (Similarity: {sug['score']}%)")
-                else:
-                    print(f"{Fore.RED}{result['error']}{Style.RESET_ALL}")
-            
-            elif choice == 5:
-                result = translator.get_random_phrase()
-                print(f"{Fore.CYAN}Random Phrase:{Style.RESET_ALL}")
-                print(f"- {result['source']} → {result['translation']}")
-                print(f"Vibe: {result['vibe']}")
-                print(f"Language: {result['language_pair']}")
-            
-            elif choice == 6:
-                stats = translator.get_stats()
-                print(f"{Fore.CYAN}Translator Stats:{Style.RESET_ALL}")
-                print(f"Total Phrases: {stats['total_phrases']}")
-                print(f"Sheng Phrases: {stats['sheng_count']}")
-                print(f"Dholuo Phrases: {stats['dholuo_count']}")
-                print(f"Vibe Breakdown:")
-                for vibe, count in stats['vibe_breakdown'].items():
-                    print(f"- {vibe}: {count}")
-            
-            elif choice == 7:
-                result = translator.export_training_data()
-                if "success" in result:
-                    print(f"{Fore.GREEN}{result['success']}{Style.RESET_ALL}")
-                else:
-                    print(f"{Fore.RED}{result['error']}{Style.RESET_ALL}")
-            
-            elif choice == 8:
-                result = translator.train_model()
-                if "success" in result:
-                    print(f"{Fore.GREEN}{result['success']}{Style.RESET_ALL}")
-                else:
-                    print(f"{Fore.RED}{result['error']}{Style.RESET_ALL}")
-            
-            elif choice == 9:
+            elif choice == "history":
                 history = translator.view_history()
                 if history:
                     print(f"{Fore.CYAN}Translation History:{Style.RESET_ALL}")
@@ -511,52 +474,108 @@ def main():
                             print(f"Translation: {entry['result']['translation']}")
                             print(f"Vibe: {entry['result']['vibe']}")
                             print(f"Language: {entry['result']['language_pair']}")
+                            print(f"Context: {entry['result'].get('context', 'casual')}")
+                            if "note" in entry['result']:
+                                print(f"Note: {entry['result']['note']}")
                         elif "suggestions" in entry['result']:
                             print("No exact match, but suggestions were:")
                             for sug in entry['result']['suggestions']:
-                                print(f"- {sug['source']} → {sug['target']} (Similarity: {sug['score']}%)")
+                                print(f"- {sug}")
                         else:
                             print(f"Error: {entry['result']['error']}")
                 else:
                     print(f"{Fore.RED}No translation history yet.{Style.RESET_ALL}")
             
-            elif choice == 10:
+            elif choice == "clear":
                 result = translator.clear_history()
                 if "success" in result:
                     print(f"{Fore.GREEN}{result['success']}{Style.RESET_ALL}")
                 else:
                     print(f"{Fore.RED}{result['error']}{Style.RESET_ALL}")
+            
+            elif choice == "search-vibe":
+                vibe = input("Enter a vibe keyword (e.g., hype, calm): ").strip()
+                if not vibe:
+                    print(f"{Fore.RED}Vibe keyword cannot be empty.{Style.RESET_ALL}")
+                    continue
+                result = translator.search_by_vibe(vibe)
+                if "error" in result:
+                    print(f"{Fore.RED}{result['error']}{Style.RESET_ALL}")
+                else:
+                    print(f"{Fore.YELLOW}Phrases with '{vibe}' vibes:{Style.RESET_ALL}")
+                    for match in result:
+                        print(f"- {match['Source Phrase']} → {match['Target Phrase']} ({match['Vibe Note']})")
+            
+            elif choice == "random":
+                result = translator.get_random_phrase()
+                print(f"{Fore.CYAN}Random Phrase:{Style.RESET_ALL}")
+                print(f"- {result['source']} → {result['translation']}")
+                print(f"Vibe: {result['vibe']}")
+                print(f"Language: {result['language_pair']}")
+            
+            elif choice == "stats":
+                stats = translator.get_stats()
+                print(f"{Fore.CYAN}Translator Stats:{Style.RESET_ALL}")
+                print(f"Total Phrases: {stats['total_phrases']}")
+                print(f"Sheng Phrases: {stats['sheng_count']}")
+                print(f"Dholuo Phrases: {stats['dholuo_count']}")
+                print(f"Vibe Breakdown:")
+                for vibe, count in stats['vibe_breakdown'].items():
+                    print(f"- {vibe}: {count}")
+            
+            elif choice == "export":
+                result = translator.export_training_data()
+                if "success" in result:
+                    print(f"{Fore.GREEN}{result['success']}{Style.RESET_ALL}")
+                else:
+                    print(f"{Fore.RED}{result['error']}{Style.RESET_ALL}")
+            
+            elif choice == "train":
+                result = translator.train_model()
+                if "success" in result:
+                    print(f"{Fore.GREEN}{result['success']}{Style.RESET_ALL}")
+                else:
+                    print(f"{Fore.RED}{result['error']}{Style.RESET_ALL}")
+            
+            else:
+                print(f"{Fore.RED}Unknown command. Available commands: translate, add, history, clear, search-vibe, random, stats, export, train, exit{Style.RESET_ALL}")
 
     elif args.command == "translate":
-        result = translator.translate(args.phrase, args.lang, args.reverse, args.ai)
+        result = translator.translate(args.phrase, args.lang, args.reverse, args.ai, args.context)
         if "translation" in result:
             print(f"Translation: {result['translation']}")
             print(f"Vibe: {result['vibe']}")
             print(f"Language: {result['language_pair']}")
-        elif "suggestions" in result:
-            print("No exact match, but did you mean one of these?")
-            for sug in result['suggestions']:
-                print(f"- {sug['source']} → {sug['target']} (Similarity: {sug['score']}%)")
-        else:
-            print(result['error'])
+            print(f"Context: {result['context']}")
+            if "note" in result:
+                print(f"Note: {result['note']}")
+        elif "error" in result:
+            print(f"{result['error']}")
+            if "suggestions" in result and isinstance(result['suggestions'], list):
+                print("Did you mean one of these?")
+                for sug in result['suggestions']:
+                    print(f"- {sug}")
 
     elif args.command == "batch":
         try:
             with open(args.file, 'r', encoding='utf-8') as f:
                 phrases = [line.strip() for line in f if line.strip()]
-            results = translator.batch_translate(phrases, args.lang, args.reverse, args.ai, export_file=args.export)
+            results = translator.batch_translate(phrases, args.lang, args.reverse, args.ai, args.export, args.context)
             for res in results:
                 print(f"\nPhrase: {res['phrase']}")
                 if "translation" in res['result']:
                     print(f"Translation: {res['result']['translation']}")
                     print(f"Vibe: {res['result']['vibe']}")
                     print(f"Language: {res['result']['language_pair']}")
-                elif "suggestions" in res['result']:
-                    print("No exact match, but did you mean one of these?")
-                    for sug in res['result']['suggestions']:
-                        print(f"- {sug['source']} → {sug['target']} (Similarity: {sug['score']}%)")
-                else:
+                    print(f"Context: {res['result']['context']}")
+                    if "note" in res['result']:
+                        print(f"Note: {res['result']['note']}")
+                elif "error" in res['result']:
                     print(res['result']['error'])
+                    if "suggestions" in res['result'] and isinstance(res['suggestions'], list):
+                        print("Did you mean one of these?")
+                        for sug in res['result']['suggestions']:
+                            print(f"- {sug}")
         except Exception as e:
             print(f"{Fore.RED}Error reading batch file: {e}{Style.RESET_ALL}")
 
@@ -570,12 +589,15 @@ def main():
                     print(f"Translation: {entry['result']['translation']}")
                     print(f"Vibe: {entry['result']['vibe']}")
                     print(f"Language: {entry['result']['language_pair']}")
-                elif "suggestions" in entry['result']:
-                    print("No exact match, but suggestions were:")
-                    for sug in entry['result']['suggestions']:
-                        print(f"- {sug['source']} → {sug['target']} (Similarity: {sug['score']}%)")
-                else:
+                    print(f"Context: {entry['result'].get('context', 'casual')}")
+                    if "note" in entry['result']:
+                        print(f"Note: {entry['result']['note']}")
+                elif "error" in entry['result']:
                     print(f"Error: {entry['result']['error']}")
+                    if "suggestions" in entry['result'] and isinstance(entry['result']['suggestions'], list):
+                        print("Suggestions were:")
+                        for sug in entry['result']['suggestions']:
+                            print(f"- {sug}")
         else:
             print("No translation history yet.")
 

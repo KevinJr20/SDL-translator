@@ -1,0 +1,107 @@
+[
+    {
+        "source": "Ayieng'",
+        "result": {
+            "suggestions": [
+                {
+                    "score": 100,
+                    "source": "Ayieng' marach",
+                    "target": "I am so full"
+                },
+                {
+                    "score": 100,
+                    "source": "Asechiemo koro ayieng'",
+                    "target": "I've eaten now I'm full"
+                },
+                {
+                    "score": 57,
+                    "source": "Dhi aora ikelna pi modho",
+                    "target": "Go to the river and fetch me drinking water"
+                }
+            ]
+        }
+    },
+    {
+        "source": "eaten now I'm full",
+        "result": {
+            "suggestions": [
+                {
+                    "score": 100,
+                    "source": "I've eaten now I'm full",
+                    "target": "Asechiemo koro ayieng'"
+                },
+                {
+                    "score": 58,
+                    "source": "I am so full",
+                    "target": "Ayieng' marach"
+                }
+            ]
+        }
+    },
+    {
+        "source": "Usinibebe ufala",
+        "result": {
+            "translation": "Don\u2019t take me for a fool",
+            "vibe": "Defensive, sharp",
+            "language_pair": "Sheng-English"
+        }
+    },
+    {
+        "source": "Uko wapi sahii we mzee?",
+        "result": {
+            "suggestions": [
+                {
+                    "score": 60,
+                    "source": "Pima hii kelele",
+                    "target": "Check out this noise"
+                },
+                {
+                    "score": 57,
+                    "source": "Sina ganji sahii, unaweza nikanja?",
+                    "target": "I don\u2019t have money now, can you give me some?"
+                }
+            ]
+        }
+    },
+    {
+        "source": "sina ganji",
+        "result": {
+            "suggestions": [
+                {
+                    "score": 100,
+                    "source": "Sina ganji sahii, unaweza nikanja?",
+                    "target": "I don\u2019t have money now, can you give me some?"
+                },
+                {
+                    "score": 70,
+                    "source": "Nilipiga chingri kiasi na nikaleft",
+                    "target": "I took a few shots of liquor then left"
+                },
+                {
+                    "score": 60,
+                    "source": "Si noma sana!",
+                    "target": "It\u2019s really cool!"
+                }
+            ]
+        }
+    },
+    {
+        "source": "adenyo",
+        "result": {
+            "error": "Phrase not found!",
+            "suggestions": [
+                "I thank you",
+                "How are you?"
+            ]
+        }
+    },
+    {
+        "source": "nitakudinya",
+        "result": {
+            "translation": "I want harvest you",
+            "vibe": "hype, casual",
+            "language_pair": "Sheng-English",
+            "context": "casual"
+        }
+    }
+]
