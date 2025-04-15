@@ -1,8 +1,3 @@
-<<<<<<< HEAD
----
-license: mit
----
-=======
 # Sheng-Dholuo Translator SDK
 
 A cultural nuance translator for Sheng (Kenyan urban slang) and Dholuo (Luo language), built with love and tech swagger. Translate phrases, capture vibes, and even train AI models with your own data.
@@ -46,4 +41,3 @@ Add more Sheng and Dholuo phrases by using the add_phrase method or submitting a
 ###### Author
 
 Built by Kevin Omondi Jr. with Kenyan pride and AI dreams.
->>>>>>> 4dd912df926b2f2d69ac1c0c4af7747dadce8c2e
