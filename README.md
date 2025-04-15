@@ -1,6 +1,6 @@
 # Sheng-Dholuo Translator SDK
 
-A cultural nuance translator for Sheng (Kenyan urban slang) and Dholuo (Luo language), built with love and tech swagger. Translate phrases, capture vibes, and even train AI models with your own data.
+A cultural nuance translator for Sheng (Kenyan urban slang) and Dholuo (Luo language), built with tech swagger. Translate phrases, capture vibes, and even train AI models with your own data.
 
 ## Features
 - Translation using CSV lookup, fuzzy matching, and AI (`facebook/m2m100_418M`).
@@ -24,9 +24,9 @@ pip install sheng-dholuo-translator
 ### Requirements
 
 `Python 3.8+`,
-`pandas`, `colorama`, `fuzzywuzzy` (automatically installed)
+`pandas`, `colorama`, `fuzzywuzzy`, `transformers`, `torch`, `datasets`, `sentencepiece`
 
-Usage
+### Usage
 
 #### Translate a Phrase
 
