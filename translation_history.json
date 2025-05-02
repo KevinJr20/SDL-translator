@@ -1,0 +1,82 @@
+[
+    {
+        "source": "mimi sina noma na msee",
+        "result": {
+            "error": "Phrase not found!",
+            "suggestions": "No similar phrases found."
+        }
+    },
+    {
+        "source": "nitakudinya",
+        "result": {
+            "translation": "I want to harvest you",
+            "vibe": "hype, casual",
+            "language_pair": "Sheng-English",
+            "context": "casual"
+        }
+    },
+    {
+        "source": "nitakudinya",
+        "result": {
+            "translation": "I want to harvest you",
+            "vibe": "hype, casual",
+            "language_pair": "Sheng-English",
+            "context": "casual"
+        }
+    },
+    {
+        "source": "idhi kanye",
+        "result": {
+            "error": "Phrase not found!",
+            "suggestions": [
+                "Adhi maber"
+            ]
+        }
+    },
+    {
+        "source": "idhi kanye",
+        "result": {
+            "error": "Phrase not found!",
+            "suggestions": [
+                "Adhi maber"
+            ]
+        }
+    },
+    {
+        "source": "idhi kanye",
+        "result": {
+            "error": "Phrase not found!",
+            "suggestions": [
+                "Adhi maber"
+            ]
+        }
+    },
+    {
+        "source": "nitakudinya",
+        "result": {
+            "translation": "I want to harvest you",
+            "vibe": "hype, casual",
+            "language_pair": "Sheng-English",
+            "context": "casual"
+        }
+    },
+    {
+        "source": "nitakudinya",
+        "result": {
+            "translation": "I want to harvest you",
+            "vibe": "hype, casual",
+            "language_pair": "Sheng-English",
+            "context": "casual"
+        }
+    },
+    {
+        "source": "nyaka abed piny",
+        "result": {
+            "translation": "Let it be on earth",
+            "vibe": "Blessing, grounded",
+            "language_pair": "Dholuo-English",
+            "context": "casual",
+            "note": "Fuzzy match (score: 93)"
+        }
+    }
+]

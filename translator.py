@@ -5,6 +5,7 @@ os.environ["WANDB_DISABLED"] = "true"
 import pandas as pd
 import argparse
 import json
+import re
 from colorama import init, Fore, Style
 from fuzzywuzzy import fuzz
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, Trainer, TrainingArguments, pipeline, M2M100ForConditionalGeneration, M2M100Tokenizer
@@ -173,8 +174,15 @@ class CulturalTranslator:
         return {"success": f"Model trained and saved to {output_dir}"}
 
     def translate(self, source_phrase, lang_filter=None, reverse=False, use_ai=False, context="casual"):
-        if not source_phrase or not isinstance(source_phrase, str):
-            return {"error": "Source phrase must be a non-empty string"}
+        # Enhanced input validation
+        if not isinstance(source_phrase, str):
+            return {"error": "Source phrase must be a string"}
+        if not source_phrase.strip():
+            return {"error": "Source phrase cannot be empty"}
+        if len(source_phrase) > 500:
+            return {"error": "Source phrase exceeds 500 characters"}
+        if not re.match(r'^[\w\s.,!?\'"-]+$', source_phrase, re.UNICODE):
+            return {"error": "Source phrase contains invalid characters"}
         if lang_filter and lang_filter not in ["Sheng-English", "Dholuo-English"]:
             return {"error": "Language pair must be 'Sheng-English' or 'Dholuo-English'"}
         if context not in ["casual", "formal", "romantic"]:
@@ -283,6 +291,10 @@ class CulturalTranslator:
     def batch_translate(self, phrases, lang_filter=None, reverse=False, use_ai=False, export_file=None, context="casual"):
         results = []
         for phrase in phrases:
+            # Skip invalid phrases in batch
+            if not isinstance(phrase, str) or not phrase.strip() or len(phrase) > 500 or not re.match(r'^[\w\s.,!?\'"-]+$', phrase, re.UNICODE):
+                results.append({"phrase": phrase, "result": {"error": "Invalid phrase (empty, too long, or contains invalid characters)"}})
+                continue
             result = self.translate(phrase, lang_filter, reverse, use_ai, context)
             results.append({"phrase": phrase, "result": result})
         

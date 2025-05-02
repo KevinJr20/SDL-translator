@@ -1,10 +1,10 @@
 Metadata-Version: 2.4
 Name: sheng-dholuo-translator
-Version: 1.0.0
-Summary: A cultural nuance translator for Sheng and Dholuo
+Version: 0.1.0
+Summary: A cultural nuance translator for Sheng and Dholuo with AI support
 Home-page: https://github.com/KevinJr20/SDL-translator.git
-Author: Kevin Omondi Jr.
-Author-email: kevojr69@gmail.com
+Author: Kevin Ochieng Omondi
+Author-email: your.email@example.com
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
@@ -12,6 +12,10 @@ Description-Content-Type: text/markdown
 Requires-Dist: pandas
 Requires-Dist: colorama
 Requires-Dist: fuzzywuzzy
+Requires-Dist: transformers
+Requires-Dist: torch
+Requires-Dist: datasets
+Requires-Dist: sentencepiece
 Dynamic: author
 Dynamic: author-email
 Dynamic: classifier
@@ -23,7 +27,18 @@ Dynamic: summary
 
 # Sheng-Dholuo Translator SDK
 
-A cultural nuance translator for Sheng (Kenyan urban slang) and Dholuo (Luo language), built with love and tech swagger. Translate phrases, capture vibes, and even train AI models with your own data.
+A cultural nuance translator for Sheng (Kenyan urban slang) and Dholuo (Luo language), built with tech swagger. Translate phrases, capture vibes, and even train AI models with your own data.
+
+## Features
+- Translation using CSV lookup, fuzzy matching, and AI (`facebook/m2m100_418M`).
+- Context-aware translations (`casual`, `formal`, `romantic`).
+- Sentiment-based vibe prediction.
+- Interactive CLI with commands like `translate`, `add`, `history`, `clear`, `search-vibe`, `random`, `stats`, `export`, `train`.
+- Fine-tune the AI model with custom data.
+
+## Upcoming Features
+- Integration with advanced AI like Grok for more nuanced translations.
+- Real-time data collection from X posts to expand the phrase database.
 
 ## Installation
 
@@ -35,10 +50,10 @@ pip install sheng-dholuo-translator
 
 ### Requirements
 
-`Python 3.8+`
-`pandas`, `colorama`, `fuzzywuzzy` (automatically installed)
+`Python 3.8+`,
+`pandas`, `colorama`, `fuzzywuzzy`, `transformers`, `torch`, `datasets`, `sentencepiece`
 
-Usage
+### Usage
 
 #### Translate a Phrase
 
@@ -70,4 +85,4 @@ Add more Sheng and Dholuo phrases by using the `add_phrase` method or submitting
 
 ###### Author
 
-Built by Kevin Omondi Jr. with Kenyan pride and AI dreams.
+Built by `Kevin Omondi Jr.` with Kenyan pride and AI dreams.

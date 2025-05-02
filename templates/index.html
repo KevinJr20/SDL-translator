@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S-DL Translator</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --accent-color: #4facfe;
+        }
+        body {
+            background: linear-gradient(45deg, #e0e7ff, #f3e8ff);
+            background-size: 200% 200%;
+            animation: gradientShift 10s ease infinite;
+        }
+        body.dark {
+            background: linear-gradient(45deg, #1a1a1a, #2d3748);
+            background-size: 200% 200%;
+            animation: gradientShift 10s ease infinite;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .gradient-btn {
+            background: linear-gradient(45deg, #00c4cc, var(--accent-color));
+            box-shadow: 0 4px 15px rgba(0, 196, 204, 0.3);
+            transition: transform 0.2s, box-shadow 0.3s;
+            border-radius: 10px;
+            display: inline-block;
+            width: 100%;
+        }
+        .gradient-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 196, 204, 0.5);
+            background: linear-gradient(45deg, #00a2a8, var(--accent-color));
+        }
+        .dark .gradient-btn {
+            background: linear-gradient(45deg, #00c4cc, var(--accent-color));
+            box-shadow: 0 4px 15px rgba(0, 196, 204, 0.3);
+        }
+        .dark .gradient-btn:hover {
+            background: linear-gradient(45deg, #00a2a8, var(--accent-color));
+            box-shadow: 0 6px 20px rgba(0, 196, 204, 0.5);
+        }
+        .clear-btn {
+            background-color: #6b7280;
+            color: #e5e7eb;
+            box-shadow: 0 2px 10px rgba(107, 114, 128, 0.2);
+            transition: transform 0.2s, box-shadow 0.3s;
+            border-radius: 10px;
+            width: 100%;
+        }
+        .clear-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(107, 114, 128, 0.3);
+            background-color: #9ca3af;
+        }
+        .dark .clear-btn {
+            background-color: #4b5563;
+        }
+        .dark .clear-btn:hover {
+            background-color: #6b7280;
+        }
+        body.dark .bg-white {
+            background-color: #111827;
+        }
+        body.dark .bg-gray-50 {
+            background-color: #374151;
+        }
+        body.dark .bg-gray-100 {
+            background-color: #374151;
+        }
+        body.dark .text-gray-900 {
+            color: #e5e7eb;
+        }
+        body.dark .border-gray-300 {
+            border-color: #6b7280;
+        }
+        body.dark .text-gray-500 {
+            color: #9ca3af;
+        }
+        body.dark .bg-gray-300 {
+            background-color: #6b7280;
+            opacity: 1;
+        }
+        body.dark .hover\:bg-gray-400:hover {
+            background-color: #9ca3af;
+        }
+        body.dark .bg-gray-600 {
+            background-color: #6b7280;
+            opacity: 1;
+        }
+        body.dark .hover\:bg-gray-500:hover {
+            background-color: #9ca3af;
+        }
+        body.dark .hidden {
+            display: none;
+        }
+        body.dark #add-phrase-form,
+        body.dark #add-result,
+        body.dark #result,
+        body.dark #history {
+            display: block !important;
+        }
+        body.dark .text-sm {
+            color: #d1d5db;
+        }
+        body.dark label {
+            color: #d1d5db;
+        }
+        body.dark input,
+        body.dark select {
+            background-color: #4b5563;
+            color: #e5e7eb;
+            border-color: #6b7280;
+        }
+        body.dark input:focus,
+        body.dark select:focus {
+            ring-color: #60a5fa;
+        }
+        #result.show {
+            animation: slideIn 0.5s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .progress-bar {
+            width: 0%;
+            height: 4px;
+            background: var(--accent-color);
+            transition: width 1s ease-in-out;
+        }
+        .color-toggle {
+            position: relative;
+            display: inline-block;
+        }
+        .color-toggle-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: var(--accent-color);
+            border: 2px solid #e5e7eb;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .color-toggle-btn:hover {
+            transform: scale(1.1);
+        }
+        .color-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 5px;
+            min-width: 100px;
+            z-index: 1;
+        }
+        .color-dropdown.active {
+            display: block;
+        }
+        .color-option {
+            padding: 8px 12px;
+            cursor: pointer;
+            color: #1f2937;
+        }
+        .color-option:hover {
+            background-color: #f3f4f6;
+        }
+        .dark .color-dropdown {
+            background-color: #111827;
+            border-color: #4b5563;
+        }
+        .dark .color-option {
+            color: #d1d5db;
+        }
+        .dark .color-option:hover {
+            background-color: #374151;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex items-center justify-center min-h-screen transition-colors duration-300">
+    <div class="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-xl w-full max-w-lg mx-4">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-blue-600 dark:text-blue-400">S-DL Smart Translator</h1>
+            <div class="flex space-x-2">
+                <div class="color-toggle">
+                    <div id="color-toggle-btn" class="color-toggle-btn" data-toggle="color-dropdown"></div>
+                    <div id="color-dropdown" class="color-dropdown">
+                        <div class="color-option" data-color="#4facfe">Blue</div>
+                        <div class="color-option" data-color="#34d399">Green</div>
+                        <div class="color-option" data-color="#a855f7">Purple</div>
+                    </div>
+                </div>
+                <button id="theme-toggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+                    <i class="fas fa-moon dark:hidden"></i>
+                    <i class="fas fa-sun hidden dark:block"></i>
+                </button>
+            </div>
+        </div>
+        <form id="translate-form" class="space-y-6">
+            <div>
+                <label class="block text-sm font-medium mb-1">Phrase</label>
+                <input type="text" name="phrase" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400" required>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Language Pair</label>
+                <select name="lang" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400">
+                    <option value="">Any</option>
+                    <option value="Sheng-English">Sheng-English</option>
+                    <option value="Dholuo-English">Dholuo-English</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Context</label>
+                <select name="context" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400">
+                    <option value="casual">Casual</option>
+                    <option value="formal">Formal</option>
+                    <option value="romantic">Romantic</option>
+                </select>
+            </div>
+            <div class="flex items-center space-x-4">
+                <label class="flex items-center">
+                    <input type="checkbox" name="use_ai" class="mr-2 h-4 w-4 text-blue-500 dark:text-blue-400">
+                    <span class="text-sm">Use AI</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="checkbox" name="reverse" class="mr-2 h-4 w-4 text-blue-500 dark:text-blue-400">
+                    <span class="text-sm">Reverse (English to Sheng/Dholuo)</span>
+                </label>
+            </div>
+            <div class="flex space-x-4">
+                <button type="submit" id="translate-btn" class="gradient-btn w-full text-white p-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed">Translate</button>
+                <button type="button" id="clear-btn" class="clear-btn w-full text-gray-900 dark:text-gray-100 p-3 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition">Clear</button>
+            </div>
+        </form>
+        <div id="loading" class="hidden text-center mt-4">
+            <div class="progress-bar"></div>
+            <i class="fas fa-spinner fa-spin text-blue-500 dark:text-blue-400"></i> Translating...
+        </div>
+        <div id="result" class="mt-6 p-6 bg-gray-50 dark:bg-gray-700 rounded-lg hidden">
+            <p><strong>Translation:</strong> <span id="translation"></span></p>
+            <p><strong>Vibe:</strong> <span id="vibe"></span></p>
+            <p><strong>Language:</strong> <span id="language"></span></p>
+            <p><strong>Context:</strong> <span id="context"></span></p>
+            <p id="error" class="hidden text-red-500"><strong>Error:</strong> <span id="error-text"></span></p>
+        </div>
+        <form id="add-phrase-form" class="space-y-6 mt-6">
+            <h2 class="text-xl font-semibold text-blue-600 dark:text-blue-400">Add New Phrase</h2>
+            <div>
+                <label class="block text-sm font-medium mb-1">Source Phrase</label>
+                <input type="text" name="source" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700" required>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Target Phrase</label>
+                <input type="text" name="target" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700" required>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Language Pair</label>
+                <select name="lang" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700" required>
+                    <option value="Sheng-English">Sheng-English</option>
+                    <option value="Dholuo-English">Dholuo-English</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Vibe</label>
+                <input type="text" name="vibe" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700" required>
+            </div>
+            <button type="submit" class="gradient-btn w-full text-white p-3 rounded-lg font-semibold">Add Phrase</button>
+        </form>
+        <div id="add-result" class="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hidden"></div>
+        <button id="show-history" class="clear-btn w-full text-gray-900 dark:text-gray-100 p-3 rounded-lg mt-4 hover:bg-gray-400 dark:hover:bg-gray-500 transition">Show History</button>
+        <div id="history" class="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hidden">
+            <button id="clear-history" class="clear-btn w-full text-gray-900 dark:text-gray-100 p-3 rounded-lg mt-2 hover:bg-gray-400 dark:hover:bg-gray-500 transition">Clear History</button>
+        </div>
+        <footer class="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
+            <p>Built by K3V0JR1 | <a href="https://x.com/yourprofile" class="text-blue-500 dark:text-blue-400 hover:underline">Follow on X</a></p>
+        </footer>
+    </div>
+    <script src="/static/jquery-3.6.0.min.js"></script>
+    <script>
+        // const clickSound = new Audio('https://www.soundjay.com/buttons/button-3.mp3'); // Commented out due to CORS; host locally if needed
+        const toggleTheme = () => {
+            console.log('Toggling theme');
+            document.body.classList.toggle('dark');
+            localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+        };
+        if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            toggleTheme();
+            // clickSound.play();
+        });
+
+        const colorToggleBtn = document.getElementById('color-toggle-btn');
+        const colorDropdown = document.getElementById('color-dropdown');
+        const colorOptions = document.querySelectorAll('.color-option');
+        colorToggleBtn.addEventListener('click', () => {
+            colorDropdown.classList.toggle('active');
+            // clickSound.play();
+        });
+        colorOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                const color = option.getAttribute('data-color');
+                document.documentElement.style.setProperty('--accent-color', color);
+                localStorage.setProperty('accent-color', color);
+                colorDropdown.classList.remove('active');
+                // clickSound.play();
+            });
+        });
+        if (localStorage.getItem('accent-color')) {
+            document.documentElement.style.setProperty('--accent-color', localStorage.getItem('accent-color'));
+        }
+
+        document.getElementById('translate-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const translateBtn = document.getElementById('translate-btn');
+            translateBtn.disabled = true;
+            const loadingDiv = document.getElementById('loading');
+            loadingDiv.classList.remove('hidden');
+            const progressBar = document.querySelector('.progress-bar');
+            progressBar.style.width = '0%';
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 10;
+                progressBar.style.width = `${progress}%`;
+                if (progress >= 100) clearInterval(interval);
+            }, 100);
+            fetch('/translate', {
+                method: 'POST',
+                body: new FormData(this)
+            })
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(interval);
+                progressBar.style.width = '100%';
+                loadingDiv.classList.add('hidden');
+                const resultDiv = document.getElementById('result');
+                resultDiv.classList.remove('hidden', 'show');
+                resultDiv.offsetWidth; // Trigger reflow
+                resultDiv.classList.add('show');
+                translateBtn.disabled = false;
+                if (data.translation) {
+                    document.getElementById('translation').textContent = data.translation;
+                    document.getElementById('vibe').textContent = data.vibe;
+                    document.getElementById('language').textContent = data.language_pair;
+                    document.getElementById('context').textContent = data.context;
+                    document.getElementById('error').classList.add('hidden');
+                } else {
+                    document.getElementById('translation').textContent = '';
+                    document.getElementById('vibe').textContent = '';
+                    document.getElementById('language').textContent = '';
+                    document.getElementById('context').textContent = '';
+                    document.getElementById('error').classList.remove('hidden');
+                    document.getElementById('error-text').textContent = data.error || 'Translation failed';
+                }
+                // clickSound.play();
+            })
+            .catch(error => {
+                console.error('Translation error:', error);
+                clearInterval(interval);
+                progressBar.style.width = '100%';
+                loadingDiv.classList.add('hidden');
+                const resultDiv = document.getElementById('result');
+                resultDiv.classList.remove('hidden', 'show');
+                resultDiv.offsetWidth; // Trigger reflow
+                resultDiv.classList.add('show');
+                translateBtn.disabled = false;
+                document.getElementById('error').classList.remove('hidden');
+                document.getElementById('error-text').textContent = 'Network error';
+                // clickSound.play();
+            });
+        });
+
+        document.getElementById('translate-btn').addEventListener('click', () => {
+            // clickSound.play();
+        });
+        document.getElementById('clear-btn').addEventListener('click', function() {
+            // clickSound.play();
+            document.getElementById('translate-form').reset();
+            document.getElementById('result').classList.add('hidden');
+            document.getElementById('add-result').classList.add('hidden');
+        });
+
+        document.getElementById('add-phrase-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            fetch('/add_phrase', {
+                method: 'POST',
+                body: new FormData(this)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('add-result').classList.remove('hidden').textContent = data.success || data.error;
+            });
+        });
+
+        document.getElementById('show-history').addEventListener('click', function() {
+            // clickSound.play();
+            fetch('/history')
+            .then(response => response.json())
+            .then(data => {
+                const historyDiv = document.getElementById('history');
+                historyDiv.classList.remove('hidden');
+                historyDiv.innerHTML = '';
+                if (data.length) {
+                    data.forEach(entry => {
+                        const div = document.createElement('div');
+                        div.className = 'mb-4 p-3 bg-gray-100 dark:bg-gray-600 rounded';
+                        div.innerHTML = `<strong>Source:</strong> ${entry.source}<br>` +
+                            (entry.result.translation
+                                ? `<strong>Translation:</strong> ${entry.result.translation}<br>` +
+                                  `<strong>Vibe:</strong> ${entry.result.vibe}<br>` +
+                                  `<strong>Language:</strong> ${entry.result.language_pair}<br>` +
+                                  `<strong>Context:</strong> ${entry.result.context}`
+                                : `<strong>Error:</strong> ${entry.result.error}`);
+                        historyDiv.appendChild(div);
+                    });
+                } else {
+                    historyDiv.innerHTML = '<p>No history yet.</p>';
+                }
+                const clearButton = document.createElement('button');
+                clearButton.id = 'clear-history';
+                clearButton.className = 'clear-btn w-full text-gray-900 dark:text-gray-100 p-3 rounded-lg mt-2 hover:bg-gray-400 dark:hover:bg-gray-500 transition';
+                clearButton.textContent = 'Clear History';
+                historyDiv.appendChild(clearButton);
+
+                document.getElementById('clear-history').addEventListener('click', function() {
+                    // clickSound.play();
+                    fetch('/clear_history', {
+                        method: 'POST'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        const historyDiv = document.getElementById('history');
+                        historyDiv.innerHTML = '<p>History cleared.</p>';
+                        historyDiv.classList.remove('hidden');
+                    })
+                    .catch(error => {
+                        console.error('Clear history error:', error);
+                        const historyDiv = document.getElementById('history');
+                        historyDiv.innerHTML = '<p>Error clearing history.</p>';
+                        historyDiv.classList.remove('hidden');
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

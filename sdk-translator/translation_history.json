@@ -103,5 +103,33 @@
             "language_pair": "Sheng-English",
             "context": "casual"
         }
+    },
+    {
+        "source": "nitakunyandua vibaya sana",
+        "result": {
+            "translation": "I want to harvest you",
+            "vibe": "hype, casual",
+            "language_pair": "Sheng-English",
+            "context": "casual",
+            "note": "Fuzzy match (score: 82)"
+        }
+    },
+    {
+        "source": "dem yako ni gwangi",
+        "result": {
+            "translation": "Your girlfriend is ugly",
+            "vibe": "playful, boasting",
+            "language_pair": "Sheng-English",
+            "context": "casual"
+        }
+    },
+    {
+        "source": "awinjo ka adenyo matek",
+        "result": {
+            "error": "Phrase not found!",
+            "suggestions": [
+                "An apwoyo"
+            ]
+        }
     }
 ]

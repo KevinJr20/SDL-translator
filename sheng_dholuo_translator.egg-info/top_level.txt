@@ -1,2 +1,3 @@
 Tests
 sdk-translator
+sheng_dholuo_translator

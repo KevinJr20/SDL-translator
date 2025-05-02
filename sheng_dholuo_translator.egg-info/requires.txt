@@ -1,3 +1,7 @@
 pandas
 colorama
 fuzzywuzzy
+transformers
+torch
+datasets
+sentencepiece
